@@ -1,178 +1,150 @@
 "use client"
 
 import * as React from "react"
-import * as LabelPrimitive from "@radix-ui/react-label"
-import { Slot } from "@radix-ui/react-slot"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Controller, useForm } from "react-hook-form"
+import { toast } from "sonner"
+import * as z from "zod"
+
+import { Button } from "@/components/ui/button"
 import {
-  Controller,
-  ControllerProps,
-  FieldPath,
-  FieldValues,
-  FormProvider,
-  useFormContext,
-} from "react-hook-form"
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupText,
+  InputGroupTextarea,
+} from "@/components/ui/input-group"
 
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
-
-const Form = FormProvider
-
-type FormFieldContextValue
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
-> = {
-  name: TName
-}
-
-const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue
-)
-
-const FormField = 
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
->({
-  ...props
-}: ControllerProps<TFieldValues, TName>) => {
-  return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
-      <Controller {...props} />
-    </FormFieldContext.Provider>
-  )
-}
-
-const useFormField = () => {
-  const fieldContext = React.useContext(FormFieldContext)
-  const itemContext = React.useContext(FormItemContext)
-  const { getFieldState, formState } = useFormContext()
-
-  const fieldState = getFieldState(fieldContext.name, formState)
-
-  if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>")
-  }
-
-  const { id } = itemContext
-
-  return {
-    id,
-    name: fieldContext.name,
-    formItemId: `${id}-form-item`,
-    formDescriptionId: `${id}-form-item-description`,
-    formMessageId: `${id}-form-item-message`,
-    ...fieldState,
-  }
-}
-
-type FormItemContextValue = {
-  id: string
-}
-
-const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-)
-
-const FormItem = React.forwardRef
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const id = React.useId()
-
-  return (
-    <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn("space-y-2", className)} {...props} />
-    </FormItemContext.Provider>
-  )
+const formSchema = z.object({
+  title: z
+    .string()
+    .min(5, "Bug title must be at least 5 characters.")
+    .max(32, "Bug title must be at most 32 characters."),
+  description: z
+    .string()
+    .min(20, "Description must be at least 20 characters.")
+    .max(100, "Description must be at most 100 characters."),
 })
-FormItem.displayName = "FormItem"
 
-const FormLabel = React.forwardRef
-  React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
->(({ className, ...props }, ref) => {
-  const { error, formItemId } = useFormField()
+export function BugReportForm() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+    },
+  })
 
-  return (
-    <Label
-      ref={ref}
-      className={cn(error && "text-destructive", className)}
-      htmlFor={formItemId}
-      {...props}
-    />
-  )
-})
-FormLabel.displayName = "FormLabel"
-
-const FormControl = React.forwardRef
-  React.ElementRef<typeof Slot>,
-  React.ComponentPropsWithoutRef<typeof Slot>
->(({ ...props }, ref) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
-
-  return (
-    <Slot
-      ref={ref}
-      id={formItemId}
-      aria-describedby={
-        !error
-          ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
-      }
-      aria-invalid={!!error}
-      {...props}
-    />
-  )
-})
-FormControl.displayName = "FormControl"
-
-const FormDescription = React.forwardRef
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => {
-  const { formDescriptionId } = useFormField()
-
-  return (
-    <p
-      ref={ref}
-      id={formDescriptionId}
-      className={cn("text-sm text-muted-foreground", className)}
-      {...props}
-    />
-  )
-})
-FormDescription.displayName = "FormDescription"
-
-const FormMessage = React.forwardRef
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField()
-  const body = error ? String(error?.message) : children
-
-  if (!body) {
-    return null
+  function onSubmit(data: z.infer<typeof formSchema>) {
+    toast("You submitted the following values:", {
+      description: (
+        <pre className="mt-2 w-[320px] overflow-x-auto rounded-md bg-code p-4 text-code-foreground">
+          <code>{JSON.stringify(data, null, 2)}</code>
+        </pre>
+      ),
+      position: "bottom-right",
+      classNames: {
+        content: "flex flex-col gap-2",
+      },
+      style: {
+        "--border-radius": "calc(var(--radius)  + 4px)",
+      } as React.CSSProperties,
+    })
   }
 
   return (
-    <p
-      ref={ref}
-      id={formMessageId}
-      className={cn("text-sm font-medium text-destructive", className)}
-      {...props}
-    >
-      {body}
-    </p>
+    <Card className="w-full sm:max-w-md">
+      <CardHeader>
+        <CardTitle>Bug Report</CardTitle>
+        <CardDescription>
+          Help us improve by reporting bugs you encounter.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form id="form-rhf-demo" onSubmit={form.handleSubmit(onSubmit)}>
+          <FieldGroup>
+            <Controller
+              name="title"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-rhf-demo-title">
+                    Bug Title
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="form-rhf-demo-title"
+                    aria-invalid={fieldState.invalid}
+                    placeholder="Login button not working on mobile"
+                    autoComplete="off"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="description"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-rhf-demo-description">
+                    Description
+                  </FieldLabel>
+                  <InputGroup>
+                    <InputGroupTextarea
+                      {...field}
+                      id="form-rhf-demo-description"
+                      placeholder="I'm having an issue with the login button on mobile."
+                      rows={6}
+                      className="min-h-24 resize-none"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    <InputGroupAddon align="block-end">
+                      <InputGroupText className="tabular-nums">
+                        {field.value.length}/100 characters
+                      </InputGroupText>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  <FieldDescription>
+                    Include steps to reproduce, expected behavior, and what
+                    actually happened.
+                  </FieldDescription>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+          </FieldGroup>
+        </form>
+      </CardContent>
+      <CardFooter>
+        <Field orientation="horizontal">
+          <Button type="button" variant="outline" onClick={() => form.reset()}>
+            Reset
+          </Button>
+          <Button type="submit" form="form-rhf-demo">
+            Submit
+          </Button>
+        </Field>
+      </CardFooter>
+    </Card>
   )
-})
-FormMessage.displayName = "FormMessage"
-
-export {
-  useFormField,
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-  FormField,
 }
