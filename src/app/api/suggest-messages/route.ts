@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       prompt,
     });
 
-    // ✅ Handle mid-stream errors here
+    // Handle mid-stream errors here
     return result.toUIMessageStreamResponse({
       onError: (error) => {
         console.error("Stream error:", error);
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error) {
-    // ✅ This catches pre-stream errors (bad API key, invalid model, etc.)
+    // This catches pre-stream errors (bad API key, invalid model, etc.)
     if (APICallError.isInstance(error)) {
       console.error("API call failed:", error.message);
       return new Response(
