@@ -1,5 +1,5 @@
 {
-  "style": "radix-nova",
+  "style": "default",
   "rsc": true,
   "tsx": true,
   "tailwind": {
