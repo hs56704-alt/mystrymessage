@@ -13,9 +13,7 @@ import {
   AlertTitle,
 } from "@/components/ui/alert"
 import { Button } from "./ui/button"
-import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle.js";
-import X from "lucide-react/dist/esm/icons/x.js";
-
+import { AlertTriangle, X } from 'lucide-react'
 
 const MessageCard = () => {
     return(
