@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useDebounceValue , useDebounceCallback } from "usehooks-ts";
+import { useDebounceValue } from "usehooks-ts";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { signUpSchema } from "@/schemas/signUpSchema";
@@ -15,17 +15,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-
 const SignUp = () => {
   const [username, setUsername] = useState('')
   const [usernameMessage, setUsernameMessage] = useState('')
   const [isCheckingUsername, setIsCheckingUsername] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const debounced = useDebounceCallback(setUsername , 300)
+  const [debouncedUsername] = useDebounceValue(username, 300)
   const router = useRouter()
 
-  //zod implmentation
+  // ✅ Form setup
   const form = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -35,35 +34,59 @@ const SignUp = () => {
     }
   })
 
+  // ✅ Username check (debounced)
   useEffect(() => {
     const checkUsernameUnique = async () => {
-      if (username) {
-        setIsCheckingUsername(true)
-        setUsernameMessage('')
-        try {
-          const response = await axios.get(`/api/check-username-unique?username=${username}`)
-          setUsernameMessage(response.data.message)
-        } catch (error) {
-          const axiosError = error as AxiosError<ApiResponse>
-          setUsernameMessage(axiosError.response?.data.message ?? "Error checking username")
-        } finally {
-          setIsCheckingUsername(false)
-        }
+      if (!debouncedUsername) return;
+
+      setIsCheckingUsername(true)
+      setUsernameMessage('')
+
+      try {
+        const response = await axios.get<ApiResponse>(
+          `/api/check-username-unique?username=${debouncedUsername}`
+        )
+
+        setUsernameMessage(response.data.message)
+
+      } catch (error) {
+        const axiosError = error as AxiosError<ApiResponse>
+        setUsernameMessage(
+          axiosError.response?.data.message ?? "Error checking username"
+        )
+      } finally {
+        setIsCheckingUsername(false)
       }
     }
-    checkUsernameUnique()
-  }, [username])
 
+    checkUsernameUnique()
+  }, [debouncedUsername])
+
+  // ✅ Submit handler
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
     setIsSubmitting(true)
+
     try {
       const response = await axios.post<ApiResponse>('/api/sign-up', data)
-      toast.success(response.data.message)
-      router.replace(`/verify/${username}`)
+
+      // ✅ Handle success properly
+      if (response.data.success) {
+        toast.success(response.data.message)
+
+        // slight delay so toast is visible
+        setTimeout(() => {
+          router.replace(`/verify/${data.username}`)
+        }, 1200)
+      } else {
+        toast.error(response.data.message)
+      }
+
     } catch (error) {
-      console.error("Error in SignUp of user", error)
       const axiosError = error as AxiosError<ApiResponse>
-      toast.error(axiosError.response?.data.message ?? "Signup failed. Try again.")
+
+      toast.error(
+        axiosError.response?.data?.message || "Signup failed. Try again."
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -72,6 +95,7 @@ const SignUp = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
+        
         <div className="text-center">
           <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
             Join Mystry Message
@@ -82,6 +106,7 @@ const SignUp = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
+            {/* Username */}
             <FormField
               control={form.control}
               name="username"
@@ -93,26 +118,38 @@ const SignUp = () => {
                       placeholder="Username"
                       autoComplete="off"
                       {...field}
+                      value={field.value ?? ''} // ✅ FIX
                       onChange={(e) => {
                         field.onChange(e)
-                        debounced(e.target.value)
+                        setUsername(e.target.value)
                       }}
                     />
                   </FormControl>
-                  
+
                   {isCheckingUsername && (
-                    <p className="text-sm text-muted-foreground">Checking username...</p>
+                    <p className="text-sm text-muted-foreground">
+                      Checking username...
+                    </p>
                   )}
+
                   {!isCheckingUsername && usernameMessage && (
-                    <p className={`text-sm ${usernameMessage === 'Username is available' ? 'text-green-500' : 'text-red-500'}`}>
+                    <p
+                      className={`text-sm ${
+                        usernameMessage === 'Username is available'
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }`}
+                    >
                       {usernameMessage}
                     </p>
                   )}
+
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Email */}
             <FormField
               control={form.control}
               name="email"
@@ -124,6 +161,7 @@ const SignUp = () => {
                       placeholder="Email"
                       autoComplete="off"
                       {...field}
+                      value={field.value ?? ''} // ✅ FIX
                     />
                   </FormControl>
                   <FormMessage />
@@ -131,6 +169,7 @@ const SignUp = () => {
               )}
             />
 
+            {/* Password */}
             <FormField
               control={form.control}
               name="password"
@@ -143,6 +182,7 @@ const SignUp = () => {
                       placeholder="Password"
                       autoComplete="off"
                       {...field}
+                      value={field.value ?? ''} // ✅ FIX
                     />
                   </FormControl>
                   <FormMessage />
@@ -150,7 +190,7 @@ const SignUp = () => {
               )}
             />
 
-            
+            {/* Button */}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
@@ -173,9 +213,10 @@ const SignUp = () => {
             </Link>
           </p>
         </div>
+
       </div>
     </div>
   )
 }
 
-export default SignUp
+export default SignUp;
