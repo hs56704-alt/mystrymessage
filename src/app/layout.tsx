@@ -37,6 +37,9 @@ export default function RootLayout({
         <Navbar />
         {children}
         <Toaster />
+        <footer className="text-center p-4 md:p-6">
+          © 2026 Mystry Message. All rights reserved.
+        </footer>
         </AuthProvider>
         
       </body>

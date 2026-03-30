@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "@/app/globals.css"; 
 import Navbar from "@/components/Navbar";
+import { SessionProvider } from "next-auth/react"; 
+import Providers from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +16,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MystryMessage",
-  description: "Start your mystry message adventure",
+  title: "Mystry Message",                            
+  description: "Start your Mystry Message adventure", 
+  metadataBase: new URL("https://yourdomain.com"),     
+  openGraph: {
+    title: "Mystery Message",
+    description: "Send anonymous messages to anyone",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -24,23 +32,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-     
-      <body className="min-h-full flex flex-col">
-        
-        
-        <Navbar />
-        {children}
-        
-       
-        
+    <html lang="en" className="antialiased">
+      
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen flex flex-col`}
+      >
+        <Providers> 
+          
+          {children}
+        </Providers>
       </body>
-      
-      
-      
     </html>
   );
 }

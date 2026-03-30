@@ -18,8 +18,8 @@ export async function middleware(request: NextRequest) {
 
     // Redirect unauthenticated users away from protected pages
     if (!token && (
-        url.pathname.startsWith('/dashboard') ||
-        url.pathname.startsWith('/verify')
+        url.pathname.startsWith('/dashboard') 
+        
     )) {
         return NextResponse.redirect(new URL('/sign-in', request.url));
     }
