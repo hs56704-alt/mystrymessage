@@ -24,7 +24,10 @@ const Page = () => {
     const { data: session } = useSession()
 
     const form = useForm({
-        resolver: zodResolver(acceptMessageSchema)
+        resolver: zodResolver(acceptMessageSchema),
+        defaultValues: {
+        acceptMessages: false
+    }
     })
 
     const { register, watch, setValue } = form
@@ -109,12 +112,13 @@ const Page = () => {
 
             <div className="mb-4">
                 <h2 className="text-lg font-semibold mb-2">Copy Your Unique Link</h2>
-                <div className="flex items-center">
+                <div className="flex items-center" >
                     <input
                         type="text"
+                        name="profileUrl"
                         value={profileUrl}
                         disabled
-                        className="input input-bordered w-full p-2 mr-2"
+                        className="input input-bordered w-full p-2 mr-2 bg-gray-100"
                     />
                     <Button onClick={copyToClipboard}>Copy</Button>
                 </div>

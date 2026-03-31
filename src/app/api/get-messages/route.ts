@@ -36,7 +36,7 @@ export async function GET(request : Request){
     {status : 401})
     }
 
-    const messages = (user[0].messages ?? []).filter(Boolean)
+    const messages = (user[0].messages ?? []).filter(Boolean) 
 
      return Response.json({
             success: true,

@@ -76,6 +76,7 @@ const SignIn = () => {
                   <FormLabel>Email/Username</FormLabel>
                   <FormControl>
                     <Input
+                      type ="text"
                       placeholder="Email/Username"
                       autoComplete="off"
                       {...field}
