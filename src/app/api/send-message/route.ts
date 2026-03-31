@@ -1,11 +1,20 @@
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/model/User";
 import {Message} from "@/model/User";
+import { messageSchema } from "@/schemas/messageSchema";
 
 export async function POST (request:Request){
     await dbConnect()
 
     const{ username , content } = await request.json()
+
+    const result = messageSchema.safeParse({ content })
+    if (!result.success) {
+        return Response.json({
+        success: false,
+        message: result.error.format().content?._errors[0] ?? "Invalid message"
+        }, { status: 400 })
+    }
 
     try {
         const user = await UserModel.findOne({username})
@@ -33,7 +42,7 @@ export async function POST (request:Request){
         return Response.json({
             success :true,
             message: "message sent successfully"
-        },{status : 200})
+        },{status : 201})
 
     } catch (error) {
         console.log("Error adding messages",error)

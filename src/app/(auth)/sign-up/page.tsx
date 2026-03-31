@@ -24,7 +24,7 @@ const SignUp = () => {
   const [debouncedUsername] = useDebounceValue(username, 300)
   const router = useRouter()
 
-  // ✅ Form setup
+ 
   const form = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -34,7 +34,7 @@ const SignUp = () => {
     }
   })
 
-  // ✅ Username check (debounced)
+  
   useEffect(() => {
     const checkUsernameUnique = async () => {
       if (!debouncedUsername) return;
@@ -62,14 +62,14 @@ const SignUp = () => {
     checkUsernameUnique()
   }, [debouncedUsername])
 
-  // ✅ Submit handler
+ 
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
     setIsSubmitting(true)
 
     try {
       const response = await axios.post<ApiResponse>('/api/sign-up', data)
 
-      // ✅ Handle success properly
+
       if (response.data.success) {
         toast.success(response.data.message)
 
