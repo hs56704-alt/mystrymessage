@@ -5,55 +5,58 @@ import UserModel from "@/model/User";
 import { User } from "next-auth";
 import mongoose from "mongoose";
 
-export async function GET(request : Request){
-    await dbConnect()
+export async function GET(request: Request) {
+    await dbConnect();
 
-    const session = await getServerSession(authOptions)
-    const user : User = session?.user as User
+    const session = await getServerSession(authOptions);
 
-    if (!session || !session.user){
-        return Response.json({
-            success: false,
-            message : "Not Authenticated"
-        },
-    {status : 401})
+    if (!session || !session.user) {
+        return Response.json(
+            { success: false, message: "Not Authenticated" },
+            { status: 401 }
+        );
     }
-
-    const userId = new mongoose.Types.ObjectId(user._id);
 
     try {
-        const user = await UserModel.aggregate([
-            {$match: {_id: userId}}, 
-            {$unwind: {path: '$messages', preserveNullAndEmptyArrays: true}},
-            {$sort : {'messages.createdAt':-1}}, 
-            {$group: {_id: '$_id',messages:{$push : '$messages'}}}
-        ])
-        if (!user || user.length === 0){
-            return Response.json({
-            success: false,
-            message : "User not found"
-        },
-    {status : 401})
-    }
+        const sessionUser = session.user as User;
 
-    const messages = (user[0].messages ?? []).filter(Boolean) 
-
-     return Response.json({
-            success: true,
-            messages : messages
-        },
-    {status : 200})
-
+        // ✅ FIX 1: Moved inside try/catch — crashes here if _id is missing/malformed
+        if (!sessionUser._id) {
+            return Response.json(
+                { success: false, message: "Invalid user session" },
+                { status: 400 }
+            );
         }
-    catch (error) {
-        console.log("An unexpected error occured",error)
-        return Response.json({
-            success : false,
-            message : "An unexpected error occured"
-        },{status : 500})
-        
-        
+
+        const userId = new mongoose.Types.ObjectId(sessionUser._id);
+
+        // ✅ FIX 2: Renamed to `dbUser` to avoid shadowing the session `user`
+        const dbUser = await UserModel.aggregate([
+            { $match: { _id: userId } },
+            { $unwind: { path: '$messages', preserveNullAndEmptyArrays: true } },
+            { $sort: { 'messages.createdAt': -1 } },
+            { $group: { _id: '$_id', messages: { $push: '$messages' } } }
+        ]);
+
+        if (!dbUser || dbUser.length === 0) {
+            return Response.json(
+                { success: false, message: "User not found" },
+                { status: 404 }  // ✅ FIX 3: 404 is more correct than 401 here
+            );
+        }
+
+        const messages = (dbUser[0].messages ?? []).filter(Boolean);
+
+        return Response.json(
+            { success: true, messages },
+            { status: 200 }
+        );
+
+    } catch (error) {
+        console.error("Failed to fetch messages:", error);
+        return Response.json(
+            { success: false, message: "An unexpected error occurred" },
+            { status: 500 }
+        );
     }
-
-
 }

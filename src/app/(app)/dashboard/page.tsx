@@ -3,7 +3,7 @@
 import MessageCard from "@/components/MessageCard";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";     
+import { Switch } from "@/components/ui/switch";
 import { Message } from "@/model/User";
 import { acceptMessageSchema } from "@/schemas/acceptMessageSchema";
 import { ApiResponse } from "@/types/ApiResponse";
@@ -12,11 +12,11 @@ import axios, { AxiosError } from "axios";
 import { Loader2, RefreshCcw } from "lucide-react";
 import { User } from "next-auth";
 import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-const Page = () => {                                  
+const Page = () => {
     const [messages, setMessages] = useState<Message[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [isSwitchLoading, setIsSwitchLoading] = useState(false)
@@ -26,16 +26,23 @@ const Page = () => {
     const form = useForm({
         resolver: zodResolver(acceptMessageSchema),
         defaultValues: {
-        acceptMessages: false
-    }
+            acceptMessages: false
+        }
     })
 
     const { register, watch, setValue } = form
     const acceptMessages = watch('acceptMessages')
 
-    
-    const handleDeleteMessage = useCallback((messageId: string) => {
-        setMessages((prev) => prev.filter((msg) => msg._id.toString() !== messageId))
+    // ✅ FIX: Also calls the DELETE API, not just local state update
+    const handleDeleteMessage = useCallback(async (messageId: string) => {
+        try {
+            await axios.delete<ApiResponse>(`/api/delete-message/${messageId}`)
+            setMessages((prev) => prev.filter((msg) => msg._id.toString() !== messageId))
+            toast.success("Message deleted")
+        } catch (error) {
+            const axiosError = error as AxiosError<ApiResponse>
+            toast.error(axiosError.response?.data.message || "Failed to delete message")
+        }
     }, [])
 
     const fetchAcceptMessage = useCallback(async () => {
@@ -53,9 +60,10 @@ const Page = () => {
 
     const fetchMessages = useCallback(async (refresh: boolean = false) => {
         setIsLoading(true)
-        
         try {
-            const response = await axios.get<ApiResponse>('/api/get-messages') 
+            const response = await axios.get<ApiResponse>('/api/get-messages')
+            // ✅ FIX: Log to debug if messages are actually coming from API
+            console.log("Fetched messages:", response.data.messages)
             setMessages(response.data.messages || [])
             if (refresh) toast.success("Showing latest messages")
         } catch (error) {
@@ -70,7 +78,7 @@ const Page = () => {
         if (!session || !session.user) return
         fetchMessages()
         fetchAcceptMessage()
-    }, [session, setValue, fetchAcceptMessage, fetchMessages])
+    }, [session, fetchAcceptMessage, fetchMessages]) // ✅ FIX: removed setValue (not needed here)
 
     const handleSwitchChange = async () => {
         setIsSwitchLoading(true)
@@ -94,13 +102,11 @@ const Page = () => {
 
     const { username } = session.user as User
 
-    
     const baseUrl = typeof window !== 'undefined'
         ? `${window.location.protocol}//${window.location.host}`
         : ''
     const profileUrl = `${baseUrl}/u/${username}`
 
-    
     const copyToClipboard = () => {
         navigator.clipboard.writeText(profileUrl)
         toast.success("Profile URL has been copied to clipboard")
@@ -112,7 +118,7 @@ const Page = () => {
 
             <div className="mb-4">
                 <h2 className="text-lg font-semibold mb-2">Copy Your Unique Link</h2>
-                <div className="flex items-center" >
+                <div className="flex items-center">
                     <input
                         type="text"
                         name="profileUrl"
@@ -155,7 +161,7 @@ const Page = () => {
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {messages.length > 0 ? (
-                    messages.map((message) => (   
+                    messages.map((message) => (
                         <MessageCard
                             key={message._id.toString()}
                             message={message}
