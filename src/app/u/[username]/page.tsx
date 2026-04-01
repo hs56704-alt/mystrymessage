@@ -16,7 +16,7 @@ type MessageFormData = z.infer<typeof messageSchema>
 
 export default function UserProfilePage() {
   const [isSending, setIsSending] = useState(false)
-  const [isNotAccepting, setIsNotAccepting] = useState(false)
+
   const params = useParams()
   const username = Array.isArray(params.username) ? params.username[0] : params.username
 
@@ -37,7 +37,8 @@ export default function UserProfilePage() {
 
       // ✅ 403 means user turned off messages — show UI state instead of toast
       if (status === 403) {
-        setIsNotAccepting(true)
+        toast.error("This user is not accepting messages right now.")
+        return
       } else {
         toast.error(axiosError.response?.data.message || "Failed to send message.")
       }
@@ -46,12 +47,13 @@ export default function UserProfilePage() {
     }
   }
 
-  // ✅ Show this when API returns 403
-  if (isNotAccepting) {
-    toast.error("This user is not accepting messages at the moment.")
-  }
-
   return (
+    <>
+   
+    <div className="mb-6 text-center">
+        <h1 className="text-3xl font-bold">Public Profile</h1>
+    </div>
+    
     <div className="flex min-h-screen justify-center pt-10 px-2">
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid w-full max-w-2xl gap-2">
         <div className="grid gap-1">
@@ -81,5 +83,7 @@ export default function UserProfilePage() {
         </Button>
       </form>
     </div>
+    </>
+    
   )
 }
