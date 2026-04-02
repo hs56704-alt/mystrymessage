@@ -35,7 +35,6 @@ export default function UserProfilePage() {
       const axiosError = error as AxiosError<ApiResponse>
       const status = axiosError.response?.status
 
-      // ✅ 403 means user turned off messages — show UI state instead of toast
       if (status === 403) {
         toast.error("This user is not accepting messages right now.")
         return
@@ -49,41 +48,47 @@ export default function UserProfilePage() {
 
   return (
     <>
-   
-    <div className="mb-6 text-center">
+      <div className="mb-6 text-center">
         <h1 className="text-3xl font-bold">Public Profile</h1>
-    </div>
-    
-    <div className="flex min-h-screen justify-center pt-10 px-2">
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid w-full max-w-2xl gap-2">
-        <div className="grid gap-1">
-          <label htmlFor="textarea-message" className="text-sm font-medium">
-            Send an anonymous message to @{username}
-          </label>
-          <Textarea
-            id="textarea-message"
-            placeholder="Type your message here."
-            {...form.register("content")}
-          />
-          {form.formState.errors.content && (
-            <p className="text-sm text-destructive">
-              {form.formState.errors.content.message}
-            </p>
-          )}
-        </div>
-        <Button type="submit" className="w-full" disabled={isSending}>
-          {isSending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Sending...
-            </>
-          ) : (
-            "Send Message"
-          )}
-        </Button>
-      </form>
-    </div>
+      </div>
+
+      
+      <div className="flex min-h-screen justify-center items-start pt-10 px-2">
+        
+        
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col w-full max-w-2xl gap-4">
+          
+         
+          <div className="flex flex-col gap-2"> 
+            <label htmlFor="textarea-message" className="text-sm font-medium">
+              Send an anonymous message to @{username}
+            </label>
+            <Textarea
+              id="textarea-message"
+              placeholder="Type your message here."
+              className="resize-none min-h-30"
+              {...form.register("content")}
+            />
+            {form.formState.errors.content && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.content.message}
+              </p>
+            )}
+          </div>
+          
+          
+          <Button type="submit" className="w-fit self-end" disabled={isSending}>
+            {isSending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              "Send Message"
+            )}
+          </Button>
+        </form>
+      </div>
     </>
-    
   )
 }

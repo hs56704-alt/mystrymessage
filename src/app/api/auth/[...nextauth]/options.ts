@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/model/User";
-// ✅ FIX 1: Removed unused `email` import from zod
+
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -11,7 +11,7 @@ export const authOptions: NextAuthOptions = {
             id: "credentials",
             name: "Credentials",
             credentials: {
-                identifier: { label: "Email or Username", type: "text" }, // ✅ FIX 2: was `email` but authorize used `credentials.identifier`
+                identifier: { label: "Email or Username", type: "text" }, 
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials: any): Promise<any> {
@@ -37,9 +37,7 @@ export const authOptions: NextAuthOptions = {
                         throw new Error("Invalid password.");
                     }
 
-                    // ✅ FIX 3: Return a plain object instead of the Mongoose document.
-                    // Mongoose documents are not plain objects — NextAuth can't reliably
-                    // serialize custom fields (_id, username, etc.) from them into the JWT.
+                   
                     return {
                         _id: user._id.toString(),
                         email: user.email,
